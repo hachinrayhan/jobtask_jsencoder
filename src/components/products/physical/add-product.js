@@ -16,11 +16,13 @@ import {
 import one from "../../../assets/images/pro3/1.jpg";
 import user from "../../../assets/images/user.png";
 import MDEditor from "@uiw/react-md-editor";
+import axios from "axios";
 
 const Add_product = () => {
 	const [value, setValue] = useState('')
 	const [quantity, setQuantity] = useState(1);
 	const [file, setFile] = useState();
+	console.log(file);
 	const [dummyimgs, setDummyimgs] = useState([
 		{ img: user },
 		{ img: user },
@@ -30,7 +32,7 @@ const Add_product = () => {
 		{ img: user },
 	]);
 
-	const onChange = (e) =>{
+	const onChange = (e) => {
 		setValue(e)
 	}
 
@@ -60,13 +62,66 @@ const Add_product = () => {
 		const image = e.target.files[0];
 		reader.onload = () => {
 			dummyimgs[i].img = reader.result;
-			setFile({ file: file });
+			setFile({ file: image });
 			setDummyimgs(dummyimgs);
 		};
 		reader.readAsDataURL(image);
 	};
 
-	const handleValidSubmit = () => {};
+	// const handleValidSubmit = (e) => {
+	// 	e.preventDefault();
+	// 	const form = e.target;
+	// 	const img = file;
+	// 	const name = form.product_name.value;
+	// 	const price = form.price.value;
+	// 	const code = form.product_code.value;
+	// 	const size = form.size.value;
+	// 	const noOfProducts = quantity;
+	// 	const description = value;
+	// 	console.log(img, name, price, code, size, noOfProducts, description);
+	// };
+
+	const handleValidSubmit = async (event) => {
+		event.preventDefault();
+
+		if (!file) {
+			// File not uploaded, handle the error
+			return;
+		}
+
+		const formData = new FormData();
+		formData.append("file", file.file);
+		const response = await fetch("http://localhost:5001/api/file/upload", {
+			method: "POST",
+			body: formData,
+		});
+
+		if (response.ok) {
+			const { image_id, id } = await response.json();
+
+			console.log(image_id, id);
+
+			// Update the variants field with the extracted image_id and id values
+			const variants = [
+				{
+					image_id,
+					id,
+				},
+			];
+
+			// Make the final request with the updated variants data
+			const requestBody = {
+				variants,
+			};
+
+			// Make the API call to save the product with the updated request body
+			// e.g., fetch('/api/products', { method: 'POST', body: JSON.stringify(requestBody) })
+			// Handle the response and any errors accordingly
+		} else {
+			// Handle the error response from the backend
+		}
+	};
+
 	return (
 		<Fragment>
 			<Breadcrumb title="Add Product" parent="Physical" />
@@ -178,6 +233,7 @@ const Add_product = () => {
 														<select
 															className="form-control digits"
 															id="exampleFormControlSelect1"
+															name="size"
 														>
 															<option>Small</option>
 															<option>Medium</option>
@@ -231,8 +287,8 @@ const Add_product = () => {
 													</Label>
 													<div className="col-xl-8 col-sm-7 description-sm">
 														<MDEditor
-														value={value}
-														onChange={onChange}/>
+															value={value}
+															onChange={onChange} />
 													</div>
 												</FormGroup>
 											</div>
